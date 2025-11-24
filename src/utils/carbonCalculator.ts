@@ -15,7 +15,99 @@ const CARBON_EMISSION_FACTORS: Record<TransportMode, number> = {
   vehicle: 0,
 };
 
-// ... (BONUS_POINTS 등은 유지)
+// 보너스 포인트 계산
+const BONUS_POINTS: Record<TransportMode, number> = {
+  walking: 10,
+  bicycle: 8,
+  bus: 5,
+  subway: 6,
+  car: 0,
+  electric_car: 3,
+  hybrid: 2,
+  hydrogen: 4,
+  motorcycle: 1,
+  electric_motorcycle: 5,
+  vehicle: 0,
+};
+
+export const calculateCarbonEmission = (route: Route): CarbonEmission => {
+  const { distance, transportMode } = route;
+  const emissionPerKm = CARBON_EMISSION_FACTORS[transportMode];
+  const totalEmission = emissionPerKm * distance;
+  const carEmission = CARBON_EMISSION_FACTORS.car * distance;
+  const savedEmission = Math.max(0, carEmission - totalEmission);
+  return { mode: transportMode, emissionPerKm, totalEmission, savedEmission };
+};
+
+// --- 상세 모델 기반 배출량 계산 ---
+
+// 2단계: 속도대별 CO2 배출계수 테이블 구현 (자동차용)
+const SPEED_CO2_TABLE: Partial<Record<TransportMode, [number, number][]>> = {
+  car: [
+    [0, 600], [10, 400], [30, 200], [60, 140], [80, 130], [100, 140], [120, 180], [140, 220],
+  ],
+  electric_car: [
+    [0, 100], [20, 40], [80, 50], [120, 70], [140, 90],
+  ]
+};
+
+// C1: 경사 보정계수 (Placeholder)
+const getSlopeFactor = (route: Route): number => {
+  // TODO: 4단계 - Tmap 고도 정보 연동 (차종별 다른 테이블 필요)
+  return 1.0;
+};
+
+// C2: 가감속 보정계수
+const getAccelerationFactor = (route: Route): number => {
+  const { distance, duration, transportMode } = route;
+
+  if (transportMode === 'bus') {
+    return 1.1; // 버스는 서울시내버스 평균 통행속도 기반 1.1 고정
+  }
+  if (transportMode === 'car') {
+    const hours = Math.max(0.001, duration / 60);
+    const avgSpeed = distance / hours;
+    // 평균 속도를 기준으로 혼잡도 추정 (간선도로 기준)
+    if (avgSpeed > 70) return 1.05; // 원활
+    if (avgSpeed > 30) return 1.10; // 서행
+    return 1.15; // 정체
+  }
+  return 1.0;
+};
+
+// C3: 에어컨/히터 보정계수
+const getCarAcFactor = (isAcOn: boolean): number => {
+  return isAcOn ? 1.08 : 1.0;
+};
+
+const getBusAcFactor = (isAcOn: boolean, temperature: number): number => {
+  if (!isAcOn) return 1.0;
+  const INDOOR_TEMP = 22; // 실내 목표 온도 가정
+  const deltaT = Math.abs(temperature - INDOOR_TEMP);
+  if (deltaT <= 5) return 1.05;
+  if (deltaT <= 10) return 1.15;
+  if (deltaT <= 15) return 1.3;
+  return 1.4;
+};
+
+// C4: 외부 기온 보정계수
+const TEMPERATURE_FACTOR_TABLE: [number, number][] = [
+  [-10, 1.057], [0, 1.036], [20, 1.0], [35, 0.97],
+];
+
+const getTemperatureFactor = (temperature: number): number => {
+  const table = TEMPERATURE_FACTOR_TABLE;
+  if (temperature <= table[0][0]) return table[0][1];
+  if (temperature >= table[table.length - 1][0]) return table[table.length - 1][1];
+  for (let i = 0; i < table.length - 1; i++) {
+    const [temp1, factor1] = table[i];
+    const [temp2, factor2] = table[i + 1];
+    if (temperature >= temp1 && temperature <= temp2) {
+      return factor1 + (temperature - temp1) * (factor2 - factor1) / (temp2 - temp1);
+    }
+  }
+  return 1.0;
+};
 
 // 시간대별 예상 탑승 인원 추정
 const getEstimatedPassengerCount = (mode: 'bus' | 'subway'): number => {
@@ -46,37 +138,8 @@ const getEstimatedPassengerCount = (mode: 'bus' | 'subway'): number => {
         else passengerCount = 150;
     }
   }
-  console.log('[Debug Passenger Count] Mode:', mode, 'Hour:', hour, 'isWeekend:', isWeekend, 'Count:', passengerCount);
+  console.log(`[Debug] getEstimatedPassengerCount Mode: ${mode}, Hour: ${hour}, Count: ${passengerCount}`);
   return passengerCount;
-};
-
-// 시간/요일별 혼잡도에 따른 배출량 보정 계수 계산
-const getCongestionFactor = (mode: 'bus' | 'subway'): number => {
-  const now = new Date();
-  const day = now.getDay(); // 0: 일요일, 6: 토요일
-  const hour = now.getHours();
-
-  const isWeekend = day === 0 || day === 6;
-  
-  // 심야/새벽 (23시 ~ 06시) - 사람이 적으므로 1인당 배출량 증가
-  if (hour >= 23 || hour < 6) {
-    return 1.5; // 1인당 배출량 50% 증가
-  }
-
-  if (isWeekend) {
-    // 주말 낮 시간대 - 평일 평균보다는 약간 쾌적하거나 비슷함
-    return 0.9; 
-  }
-
-  // 평일 출퇴근 시간 (07~09, 17~19) - 사람이 많으므로 1인당 배출량 감소
-  const isRushHour = (hour >= 7 && hour < 9) || (hour >= 17 && hour < 19);
-  if (isRushHour) {
-    // 지하철이 버스보다 혼잡도가 더 극심하게 증가하는 경향 반영
-    return mode === 'subway' ? 0.6 : 0.7; 
-  }
-
-  // 평일 평시
-  return 1.0;
 };
 
 // --- 지하철 전용 계산 모델 ---
@@ -93,7 +156,7 @@ const SUBWAY_LINE_ENERGY_RATE: Record<string, number> = {
 
 const calculateSubwayEmission = (route: Route): CarbonEmission => {
   let totalDrivingEmission = 0;
-  const congestionFactor = getCongestionFactor('subway'); // 혼잡도 계수 적용
+  const passengerCount = Math.max(1, getEstimatedPassengerCount('subway'));
 
   if (route.segments) {
     for (const segment of route.segments) {
@@ -106,12 +169,11 @@ const calculateSubwayEmission = (route: Route): CarbonEmission => {
     }
   }
 
-  // 기본 계산값이 없을 경우(segments 없는 단순 호출 시) 평균값 사용
   if (totalDrivingEmission === 0) {
     totalDrivingEmission = CARBON_EMISSION_FACTORS.subway * route.distance;
   }
 
-  const totalEmission = (totalDrivingEmission + STATION_FIXED_EMISSION) * congestionFactor;
+  const totalEmission = (totalDrivingEmission + STATION_FIXED_EMISSION) / passengerCount;
   const carComparable = CARBON_EMISSION_FACTORS.car * route.distance;
   const savedEmission = Math.max(0, carComparable - totalEmission);
 
@@ -126,7 +188,9 @@ const calculateSubwayEmission = (route: Route): CarbonEmission => {
 // 버스 전용 계산 모델
 const calculateBusEmission = (route: Route, isAcOn: boolean, temperature: number): CarbonEmission => {
   const { distance, duration } = route;
-  const congestionFactor = getCongestionFactor('bus'); // 혼잡도 계수 적용
+  const passengerCount = Math.max(1, getEstimatedPassengerCount('bus'));
+
+  console.log(`[Debug] calculateBusEmission - Distance: ${distance}, PassengerCount: ${passengerCount}`);
 
   // 1. 주행/정차 시간 추정
   const STOPS_PER_KM = 2; // km당 정류장 2개 가정
@@ -142,14 +206,16 @@ const calculateBusEmission = (route: Route, isAcOn: boolean, temperature: number
   const c2_accel = getAccelerationFactor(route);
   const c3_hvac = getBusAcFactor(isAcOn, temperature);
   
-  // 혼잡도 계수를 최종 배출량에 곱함 (승객 수에 따른 1/N 효과 반영)
-  // baseEf는 차량 1대 기준이므로, 이를 승객 수로 나눈 효과를 congestionFactor로 조절
-  // 기존 CARBON_EMISSION_FACTORS.bus(45)는 평균 탑승 기준이므로, 이를 기준으로 보정
-  let drivingEmission = 0;
-  
-  // 상세 모델 계산이 너무 복잡하거나 값이 튈 수 있으므로, 기본 평균값(45)을 기준으로 혼잡도/환경 변수 보정 적용
+  // 1대당 기본 배출량 (복잡한 모델 대신 평균값 600 사용하거나 baseEf 사용 선택. 여기서는 평균값 기준)
   const baseEmission = CARBON_EMISSION_FACTORS.bus * distance;
-  const totalEmission = baseEmission * c1_slope * c2_accel * c3_hvac * congestionFactor;
+  
+  // 1대당 총 배출량
+  const vehicleTotalEmission = baseEmission * c1_slope * c2_accel * c3_hvac;
+
+  // 1인당 배출량 = 1대당 배출량 / 승객 수
+  const totalEmission = vehicleTotalEmission / passengerCount;
+
+  console.log(`[Debug] calculateBusEmission - VehicleTotal: ${vehicleTotalEmission}, FinalPerPerson: ${totalEmission}`);
 
   const carComparable = CARBON_EMISSION_FACTORS.car * distance;
   const savedEmission = Math.max(0, carComparable - totalEmission);
@@ -161,11 +227,6 @@ const calculateBusEmission = (route: Route, isAcOn: boolean, temperature: number
     savedEmission: savedEmission,
   };
 }
-
-// --- 전기차(EV) 전용 상수 ---
-const EV_BASE_EFFICIENCY = 140; // 기준 소비전력 (Wh/km)
-const CHARGING_EFFICIENCY = 0.85; // 충전 효율
-const GRID_EMISSION_FACTOR = 451.7; // 국가 온실가스 배출계수 (gCO₂/kWh)
 
 // 자동차/이륜차용 계산 모델 (하위 모든 차종 포함)
 const calculateVehicleEmission = (route: Route, isAcOn: boolean, temperature: number): CarbonEmission => {
@@ -180,8 +241,6 @@ const calculateVehicleEmission = (route: Route, isAcOn: boolean, temperature: nu
       savedEmission: 0,
     };
   }
-
-  let totalEmission = 0;
 
   let totalEmission = 0;
   const hours = Math.max(0.001, duration / 60);
@@ -370,4 +429,4 @@ export const formatDuration = (duration: number): string => {
   const minutes = duration % 60;
   if (hours > 0) return `${hours}시간 ${minutes}분`;
   return `${minutes}분`;
-}; 
+};
