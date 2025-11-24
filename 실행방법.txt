@@ -1,0 +1,31 @@
+세 개의 터미널(cmd 또는 PowerShell) 창을 각각 준비해 주세요.
+
+  ---
+
+  1. 백엔드 서버 (API 서버) 실행
+
+   * 첫 번째 터미널 창에서 아래 명령어를 순서대로 실행합니다.
+
+   1     cd C:\Users\WannaGoHome\Desktop\eco_navi
+   2     node server/index.js
+      (이 터미널은 백엔드 서버가 실행되는 동안 계속 켜두세요.)
+
+  2. 메트로 번들러 (React Native 개발 서버) 실행
+
+   * 두 번째 터미널 창에서 아래 명령어를 순서대로 실행합니다.
+
+   1     cd C:\Users\WannaGoHome\Desktop\eco_navi\EcoNaviAR
+   2     npx react-native start --reset-cache
+      (이 터미널은 메트로 번들러가 실행되는 동안 계속 켜두세요.)
+
+  3. 안드로이드 앱 실행
+
+   * 세 번째 터미널 창에서 아래 명령어를 순서대로 실행합니다.
+
+   1     cd C:\Users\WannaGoHome\Desktop\eco_navi\EcoNaviAR
+   2     npx react-native run-android
+      (이 명령은 앱을 빌드하고 에뮬레이터에 설치하여 실행합니다.)
+
+  ---
+
+  이 세 가지를 모두 실행하면 앱이 에뮬레이터에 나타날 것입니다.

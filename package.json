@@ -1,0 +1,54 @@
+{
+  "name": "eco-navigation",
+  "version": "1.0.0",
+  "description": "탄소 배출량을 측정하고 보너스를 제공하는 네비게이션 앱",
+  "private": true,
+  "dependencies": {
+    "@types/leaflet": "^1.9.0",
+    "@types/node": "^16.18.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/react-router-dom": "^5.3.3",
+    "@types/styled-components": "^5.1.26",
+    "axios": "^1.13.2",
+    "http-proxy-middleware": "^2.0.6",
+    "jwt-decode": "^4.0.0",
+    "leaflet": "^1.9.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-leaflet": "^4.2.0",
+    "react-minimal-pie-chart": "^9.1.1",
+    "react-router-dom": "^7.9.3",
+    "react-scripts": "5.0.1",
+    "styled-components": "^5.3.11",
+    "typescript": "^4.9.0",
+    "web-vitals": "^2.1.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@react-native-community/cli": "13.6.6"
+  }
+}
