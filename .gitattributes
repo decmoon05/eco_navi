@@ -1,0 +1,16 @@
+# Git 속성 설정
+# 민감한 파일이 실수로 커밋되는 것을 방지
+
+# API 키 파일은 바이너리로 처리 (diff 방지)
+**/config/apiKeys.ts binary
+EcoNaviAR/src/config/apiKeys.ts binary
+
+# 환경 변수 파일
+*.env binary
+server/.env binary
+
+# 데이터베이스 파일
+*.db binary
+*.sqlite binary
+*.sqlite3 binary
+

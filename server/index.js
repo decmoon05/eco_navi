@@ -6,7 +6,8 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config({ path: './server/.env' }); // 명확한 경로 지정
 
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001;
+const host = process.env.HOST || '0.0.0.0'; // 모든 네트워크 인터페이스에서 접속 가능
 
 app.use(cors());
 app.use(express.json());
@@ -442,6 +443,8 @@ app.get('/reports/:year/:month', authMiddleware, async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`백엔드 서버가 http://localhost:${port} 에서 실행 중입니다.`);
+app.listen(port, host, () => {
+  console.log(`백엔드 서버가 http://${host}:${port} 에서 실행 중입니다.`);
+  console.log(`로컬 접속: http://localhost:${port}`);
+  console.log(`외부 접속: http://[공인IP 또는 도메인]:${port}`);
 });
