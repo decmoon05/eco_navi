@@ -9,7 +9,7 @@
 ### A. Tmap API
 
 *   **역할:** 자동차, 도보, 자전거 등 대중교통을 제외한 경로 탐색 및 POI(장소) 검색 담당.
-*   **API 키:** `fEvgaR4L3J7T40jZZaiA47xaWzybYo0qaWJvNFHm` (현재 코드에 하드코딩)
+*   **API 키:** `EcoNaviAR/src/config/apiKeys.ts` 파일에서 설정 (⚠️ 보안: 실제 키는 Git에 커밋되지 않음)
 *   **주요 사용 엔드포인트:**
     *   **POI 검색 (Geocoding):** `https://apis.openapi.sk.com/tmap/pois`
         *   `RouteForm.tsx`에서 장소 검색 자동완성에 사용.
@@ -19,7 +19,7 @@
 ### B. ODsay API
 
 *   **역할:** 대중교통(버스+지하철) 상세 경로 탐색 담당.
-*   **API 키:** `wIhoG7xGvLs1u2XeQuqme9/vKhoPBsaDJx/cLskyf2s` (현재 코드에 하드코딩)
+*   **API 키:** `EcoNaviAR/src/config/apiKeys.ts` 파일에서 설정 (⚠️ 보안: 실제 키는 Git에 커밋되지 않음)
 *   **주요 사용 엔드포인트:**
     *   **대중교통 길찾기:** `https://api.odsay.com/v1/api/searchPubTransPathT`
         *   `MainPage.tsx`에서 대중교통 경로의 전체적인 정보(거리, 시간, 환승 정보)를 가져옴.
@@ -29,8 +29,10 @@
 ### C. Google Maps API
 
 *   **역할:** `react-native-maps`의 지도 타일 제공.
-*   **API 키:** `AIzaSyB9h3q9QSL5MLz_x7HSFkMyX3vv2SoGpz0`
-*   **설정 위치:** `EcoNaviAR/android/app/src/main/AndroidManifest.xml`
+*   **API 키:** `EcoNaviAR/src/config/apiKeys.ts` 파일에서 설정 (⚠️ 보안: 실제 키는 Git에 커밋되지 않음)
+*   **설정 위치:** 
+    * 코드: `EcoNaviAR/src/config/apiKeys.ts`
+    * Android: `EcoNaviAR/android/app/src/main/AndroidManifest.xml` (빌드 시 주입 필요)
 
 ---
 

@@ -62,6 +62,8 @@ ios/Pods
 *.apk
 *.aab
 *.ipa
+EcoNaviAR/android/gradle.properties
+**/gradle.properties.local
 
 # Temporary files
 *.tmp
