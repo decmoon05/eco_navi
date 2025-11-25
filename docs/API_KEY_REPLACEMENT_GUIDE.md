@@ -27,9 +27,19 @@ Google Cloud Platform에서 API 키 노출 경고를 받으셨습니다. 다음 
    - 패키지명: `com.econaviar`
    - SHA-1 인증서 지문 추가:
      ```bash
-     # 디버그 키스토어의 SHA-1 확인
+     # 방법 1: keytool 사용
      keytool -list -v -keystore EcoNaviAR/android/app/debug.keystore -alias androiddebugkey -storepass android -keypass android
+     
+     # 방법 2: Gradle 사용 (권장)
+     cd EcoNaviAR/android
+     ./gradlew signingReport
      ```
+     
+     **현재 프로젝트의 SHA-1 지문:**
+     - `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25` (androiddebugkey)
+     - `E7:FA:13:EA:97:33:F7:9E:DE:13:8F:1E:48:28:D3:11:36:1D:2E:08` (AndroidDebugKey)
+     
+     ⚠️ **두 지문 모두 Google Cloud Console에 추가하는 것을 권장합니다.**
 
    **API 제한사항:**
    - **키 제한** 선택
