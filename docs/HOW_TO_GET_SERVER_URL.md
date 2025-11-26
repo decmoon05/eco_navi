@@ -8,13 +8,18 @@ Railway에 배포한 서버의 URL을 확인하는 방법입니다.
 
 1. Railway 대시보드에서 프로젝트 선택
 2. 상단 네비게이션에서 **"Networking"** 탭 클릭
-3. **"Domains"** 섹션에서 URL 확인
+3. **"Public Networking"** 섹션에서:
+   - **"Generate Service Domain"** 버튼 클릭
+   - ⚠️ **중요:** "Target port"에 `3001` 입력 (기본값 8080이 아닌 3001!)
+   - "Generate Domain" 버튼 클릭
+4. 생성된 도메인 확인
    - 예: `https://eco-navi-production.up.railway.app`
    - 또는 `https://worthy-flexibility-production.up.railway.app`
 
-**도메인이 없다면:**
-- "Generate Domain" 버튼 클릭
-- Railway가 자동으로 도메인 생성
+**⚠️ 포트 설정 주의사항:**
+- Railway는 기본적으로 8080 포트를 제안하지만
+- 우리 서버는 **3001 포트**를 사용합니다
+- 반드시 **Target port를 3001로 설정**해야 합니다!
 
 ### 방법 2: 서비스 카드에서
 
