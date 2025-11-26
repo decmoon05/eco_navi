@@ -41,10 +41,18 @@ EcoNaviAR 서버를 클라우드에 배포하여 어디서나 접속 가능하�
 
 1. Railway 대시보드에서 "New Project" → "Deploy from GitHub repo"
 2. `eco_navi` 저장소 선택
-3. ⚠️ **중요:** "Settings" → "Root Directory"를 `server`로 설정
-4. "Deploy" 클릭
+3. ⚠️ **중요:** "Settings" → "Source" 섹션에서 "Add Root Directory" 클릭
+4. Root Directory에 `server` 입력
+5. "Deploy" 클릭
 
 **참고:** Railway가 루트 디렉토리를 배포하려고 하면 실패합니다. 반드시 Root Directory를 `server`로 설정해야 합니다.
+
+**기존 서비스에 Root Directory 추가:**
+1. Railway 대시보드에서 서비스 선택
+2. "Settings" 탭 클릭
+3. "Source" 섹션에서 "Add Root Directory" 클릭 (또는 기존 Root Directory 편집)
+4. `server` 입력 후 저장
+5. 재배포
 
 **방법 2: Railway CLI 사용**
 
