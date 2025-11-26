@@ -11,3 +11,5 @@ switch ($commit.Substring(0, 7)) {
     default { $input }
 }
 
+
+

@@ -9,7 +9,15 @@ const app = express();
 const port = process.env.PORT || 3001;
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
-app.use(cors());
+// CORS 설정: 프로덕션에서는 특정 origin만 허용 (필요 시)
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.ALLOWED_ORIGINS?.split(',') || '*' 
+    : '*',
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 // 요청 본문 크기 제한 증가 (기본 100kb → 10mb)
 // 경로 데이터(polylines 등)가 클 수 있으므로 제한을 늘림
 app.use(express.json({ limit: '10mb' }));

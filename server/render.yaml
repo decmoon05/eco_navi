@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: econavi-server
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: JWT_SECRET
+        generateValue: true
+    disk:
+      name: econavi-db
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
+

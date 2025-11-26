@@ -57,10 +57,10 @@ EcoNaviAR is a **client-server architecture** with the following components:
                              │
         ┌────────────────────┼────────────────────┐
         │                    │                    │
-┌───────▼────────┐  ┌────────▼────────┐  ┌───────▼────────┐
-│   Tmap API     │  │   ODsay API     │  │  Public Data   │
-│  (Route/POI)   │  │  (Public       │  │  Portal API     │
-│                │  │   Transit)     │  │  (Bus/Subway)   │
+┌───────▼────────┐  ┌────────▼───────┐  ┌───────▼────────┐
+│   Tmap API     │  │   ODsay API    │  │  Public Data   │
+│  (Route/POI)   │  │  (Public       │  │  Portal API    │
+│                │  │   Transit)     │  │  (Bus/Subway)  │
 └────────────────┘  └────────────────┘  └────────────────┘
 ```
 
@@ -1740,4 +1740,5 @@ When adding new features:
 **Last Updated:** 2025-01-24  
 **Maintainer:** Development Team  
 **License:** MIT
+
 

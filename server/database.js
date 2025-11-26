@@ -1,7 +1,19 @@
 const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+const fs = require('fs');
+
+// 데이터베이스 경로 설정 (환경 변수 또는 기본값)
+// 클라우드 배포 시 Persistent Disk 경로 사용
+let dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'database.db');
+
+// 디렉토리가 없으면 생성 (Render Persistent Disk 등)
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
 
 // 데이터베이스 파일에 연결 (없으면 새로 생성)
-const db = new sqlite3.Database('./database.db', (err) => {
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('데이터베이스 연결 오류:', err.message);
   } else {
