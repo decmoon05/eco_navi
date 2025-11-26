@@ -49,14 +49,30 @@ PORT=3001
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 
-### 5. 배포 확인
+### 5. 배포 확인 및 URL 확인
 
 1. **Deployments** 탭에서 배포 상태 확인
-2. 배포 완료 후 **Networking** 탭에서 생성된 URL 확인
+2. **서버 URL 확인 방법:**
+   
+   **방법 1: Networking 탭 (권장)**
+   - 상단 네비게이션에서 **"Networking"** 탭 클릭
+   - "Domains" 섹션에서 생성된 URL 확인
+   - 예: `https://eco-navi-production.up.railway.app`
+   
+   **방법 2: 서비스 카드에서**
+   - Architecture 화면의 서비스 카드(eco_navi) 클릭
+   - 상세 정보에서 "Generate Domain" 또는 기존 도메인 확인
+   
+   **방법 3: Settings → Networking**
+   - Settings 탭 → Networking 섹션
+   - "Generate Domain" 버튼 클릭하여 도메인 생성
+   - 또는 기존 도메인 확인
+
 3. URL로 `/health` 엔드포인트 테스트:
    ```
    https://your-service.up.railway.app/health
    ```
+   브라우저에서 접속하여 `{"status":"ok",...}` 응답 확인
 
 ## 🔧 문제 해결
 
