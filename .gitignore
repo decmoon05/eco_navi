@@ -69,3 +69,21 @@ EcoNaviAR/android/gradle.properties
 *.tmp
 *.temp
 .cache/
+
+# Legacy web prototype files (현재 사용하지 않음)
+/src/
+/public/
+/package.json
+/tsconfig.json
+/node_modules/
+
+# Temporary scripts (Git 커밋 메시지 수정용, 더 이상 필요 없음)
+fix_commit_*.ps1
+fix_commits*.ps1
+msg_filter.*
+rebase_script.txt
+test_commit_msg.txt
+test_msg.txt
+*.hwp
+*.pdf
+개발일지.txt

@@ -39,6 +39,12 @@ const db = new sqlite3.Database('./database.db', (err) => {
             console.error('vehicle_type 컬럼 추가 오류:', err.message);
           }
         });
+        // 관리자 권한 컬럼 추가
+        db.run(`ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0`, (err) => {
+          if (err && !err.message.includes('duplicate column name')) {
+            console.error('is_admin 컬럼 추가 오류:', err.message);
+          }
+        });
       }
     });
 

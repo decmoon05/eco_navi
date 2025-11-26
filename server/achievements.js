@@ -1,5 +1,25 @@
 const db = require('./database.js');
 
+/**
+ * 업적 시스템
+ * 
+ * 업적은 사용자의 특정 행동이나 누적 통계를 기반으로 달성됩니다.
+ * 각 업적은 한 번만 달성 가능하며, 달성 시 보너스 포인트를 지급합니다.
+ * 
+ * 업적 구조:
+ * - id: 고유 식별자
+ * - name: 업적 이름
+ * - description: 업적 설명
+ * - bonus: 달성 시 보너스 포인트
+ * - check: 달성 조건 확인 함수 (userId, trip을 받아 boolean 반환)
+ * 
+ * 업적 종류:
+ * - 첫 이용 업적: 특정 이동 수단을 처음 사용할 때
+ * - 거리 기반 업적: 누적 이동 거리 달성
+ * - 탄소 절감 업적: 누적 탄소 절감량 달성
+ * - 이용 횟수 기반 업적: 특정 이동 수단을 여러 번 이용
+ */
+
 // 모든 업적 목록과 달성 조건 정의
 const achievements = [
   {
@@ -51,7 +71,129 @@ const achievements = [
       });
     }
   },
-  // TODO: 더 많은 업적 추가
+  {
+    id: 'bike_100km',
+    name: '자전거 마스터',
+    description: '자전거로 누적 100km를 달성했습니다.',
+    bonus: 500,
+    check: async (userId, trip) => {
+      const sql = `SELECT SUM(distance) AS total_distance FROM trips WHERE user_id = ? AND transport_mode = 'bicycle'`;
+      return new Promise((resolve, reject) => {
+        db.get(sql, [userId], (err, row) => {
+          if (err) return resolve(false);
+          resolve(row && row.total_distance >= 100);
+        });
+      });
+    }
+  },
+  {
+    id: 'save_50kg',
+    name: '탄소 절감 마스터',
+    description: '누적 50kg의 탄소를 절약했습니다.',
+    bonus: 1000,
+    check: async (userId, trip) => {
+      const sql = `SELECT SUM(saved_emission) AS total_saved FROM trips WHERE user_id = ?`;
+      return new Promise((resolve, reject) => {
+        db.get(sql, [userId], (err, row) => {
+          if (err) return resolve(false);
+          resolve(row && row.total_saved >= 50000); // 50kg = 50,000g
+        });
+      });
+    }
+  },
+  {
+    id: 'walk_100km',
+    name: '걷기 마스터',
+    description: '도보로 누적 100km를 달성했습니다.',
+    bonus: 600,
+    check: async (userId, trip) => {
+      const sql = `SELECT SUM(distance) AS total_distance FROM trips WHERE user_id = ? AND transport_mode = 'walking'`;
+      return new Promise((resolve, reject) => {
+        db.get(sql, [userId], (err, row) => {
+          if (err) return resolve(false);
+          resolve(row && row.total_distance >= 100);
+        });
+      });
+    }
+  },
+  {
+    id: 'public_transit_50',
+    name: '대중교통 애호가',
+    description: '대중교통을 50번 이상 이용했습니다.',
+    bonus: 400,
+    check: async (userId, trip) => {
+      const sql = `SELECT COUNT(*) AS count FROM trips WHERE user_id = ? AND transport_mode IN ('bus', 'subway', 'train')`;
+      return new Promise((resolve, reject) => {
+        db.get(sql, [userId], (err, row) => {
+          if (err) return resolve(false);
+          resolve(row && row.count >= 50);
+        });
+      });
+    }
+  },
+  {
+    id: 'eco_trips_100',
+    name: '친환경 라이프',
+    description: '친환경 이동 수단으로 100번 이상 이동했습니다.',
+    bonus: 800,
+    check: async (userId, trip) => {
+      const sql = `SELECT COUNT(*) AS count FROM trips WHERE user_id = ? AND transport_mode IN ('walking', 'bicycle', 'bus', 'subway', 'train')`;
+      return new Promise((resolve, reject) => {
+        db.get(sql, [userId], (err, row) => {
+          if (err) return resolve(false);
+          resolve(row && row.count >= 100);
+        });
+      });
+    }
+  },
+  {
+    id: 'save_100kg',
+    name: '탄소 절감 영웅',
+    description: '누적 100kg의 탄소를 절약했습니다.',
+    bonus: 2000,
+    check: async (userId, trip) => {
+      const sql = `SELECT SUM(saved_emission) AS total_saved FROM trips WHERE user_id = ?`;
+      return new Promise((resolve, reject) => {
+        db.get(sql, [userId], (err, row) => {
+          if (err) return resolve(false);
+          resolve(row && row.total_saved >= 100000); // 100kg = 100,000g
+        });
+      });
+    }
+  },
+  {
+    id: 'total_distance_500km',
+    name: '장거리 여행자',
+    description: '누적 500km를 이동했습니다.',
+    bonus: 600,
+    check: async (userId, trip) => {
+      const sql = `SELECT SUM(distance) AS total_distance FROM trips WHERE user_id = ?`;
+      return new Promise((resolve, reject) => {
+        db.get(sql, [userId], (err, row) => {
+          if (err) return resolve(false);
+          resolve(row && row.total_distance >= 500);
+        });
+      });
+    }
+  },
+  {
+    id: 'first_train',
+    name: '기차의 달인',
+    description: '첫 기차 경로를 검색했습니다.',
+    bonus: 50,
+    check: async (userId, trip) => {
+      return trip.route.transportMode === 'train';
+    }
+  },
+  {
+    id: 'first_subway',
+    name: '지하철의 달인',
+    description: '첫 지하철 경로를 검색했습니다.',
+    bonus: 50,
+    check: async (userId, trip) => {
+      return trip.route.transportMode === 'subway';
+    }
+  },
 ];
 
 // 모든 업적을 확인하고, 새로 달성한 업적이 있다면 DB에 저장하고 보너스 포인트를 반환하는 함수

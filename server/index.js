@@ -7,13 +7,25 @@ require('dotenv').config({ path: './server/.env' }); // 명확한 경로 지정
 
 const app = express();
 const port = process.env.PORT || 3001;
-const host = process.env.HOST || '0.0.0.0'; // 모든 네트워크 인터페이스에서 접속 가능
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 app.use(cors());
-app.use(express.json());
+// 요청 본문 크기 제한 증가 (기본 100kb → 10mb)
+// 경로 데이터(polylines 등)가 클 수 있으므로 제한을 늘림
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.get('/', (req, res) => {
   res.send('EcoNavi 백엔드 서버가 실행 중입니다.');
+});
+
+// Health check 엔드포인트 (서버 연결 확인용)
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    message: '서버가 정상적으로 실행 중입니다.',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // 회원가입 API 라우트
@@ -30,8 +42,10 @@ app.post('/register', (req, res) => {
       return res.status(500).json({ message: '비밀번호 암호화 중 오류 발생', error: err.message });
     }
 
-    const sql = 'INSERT INTO users (username, password) VALUES (?, ?)';
-    db.run(sql, [username, hashedPassword], function (err) {
+    // username이 'admin'인 경우 관리자 권한 부여
+    const isAdmin = username === 'admin' ? 1 : 0;
+    const sql = 'INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)';
+    db.run(sql, [username, hashedPassword, isAdmin], function (err) {
       if (err) {
         if (err.code === 'SQLITE_CONSTRAINT') {
           return res.status(409).json({ message: '이미 존재하는 사용자 이름입니다.' });
@@ -86,6 +100,7 @@ app.post('/login', (req, res) => {
 });
 
 const authMiddleware = require('./authMiddleware');
+const adminMiddleware = require('./adminMiddleware');
 
 // 보너스 포인트 계산 로직 (프론트엔드와 동일하게 유지)
 const BONUS_POINTS = {
@@ -107,7 +122,7 @@ const calculateBonus = (route) => {
 // 내 정보 조회 API (포인트 및 목표 포함)
 app.get('/me', authMiddleware, (req, res) => {
   const userId = req.user.id;
-  const sql = "SELECT id, username, points, monthly_goal, vehicle_type FROM users WHERE id = ?";
+  const sql = "SELECT id, username, points, monthly_goal, vehicle_type, is_admin FROM users WHERE id = ?";
   db.get(sql, [userId], (err, user) => {
     if (err) {
       return res.status(500).json({ message: '사용자 정보 조회 중 데이터베이스 오류가 발생했습니다.', error: err.message });
@@ -115,6 +130,8 @@ app.get('/me', authMiddleware, (req, res) => {
     if (!user) {
       return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
     }
+    // is_admin을 boolean으로 변환
+    user.is_admin = user.is_admin === 1;
     res.status(200).json(user);
   });
 });
@@ -443,8 +460,148 @@ app.get('/reports/:year/:month', authMiddleware, async (req, res) => {
   }
 });
 
-app.listen(port, host, () => {
-  console.log(`백엔드 서버가 http://${host}:${port} 에서 실행 중입니다.`);
-  console.log(`로컬 접속: http://localhost:${port}`);
-  console.log(`외부 접속: http://[공인IP 또는 도메인]:${port}`);
+// ==================== 관리자 API ====================
+// 개발자/관리자용 API - admin 계정만 접근 가능
+
+// 모든 유저 목록 조회
+app.get('/admin/users', authMiddleware, adminMiddleware, (req, res) => {
+  const sql = 'SELECT id, username, points, monthly_goal, vehicle_type FROM users ORDER BY id';
+  db.all(sql, [], (err, users) => {
+    if (err) {
+      return res.status(500).json({ message: '유저 목록 조회 중 오류가 발생했습니다.', error: err.message });
+    }
+    res.status(200).json(users);
+  });
+});
+
+// 특정 유저의 상세 정보 (탄소량 포함)
+app.get('/admin/users/:userId', authMiddleware, adminMiddleware, (req, res) => {
+  const userId = parseInt(req.params.userId);
+  
+  // 유저 기본 정보
+  const userSql = 'SELECT id, username, points, monthly_goal, vehicle_type FROM users WHERE id = ?';
+  db.get(userSql, [userId], (err, user) => {
+    if (err) {
+      return res.status(500).json({ message: '유저 정보 조회 중 오류가 발생했습니다.', error: err.message });
+    }
+    if (!user) {
+      return res.status(404).json({ message: '유저를 찾을 수 없습니다.' });
+    }
+
+    // 유저의 모든 이동 기록 조회
+    const tripsSql = 'SELECT * FROM trips WHERE user_id = ? ORDER BY date DESC';
+    db.all(tripsSql, [userId], (err, trips) => {
+      if (err) {
+        return res.status(500).json({ message: '이동 기록 조회 중 오류가 발생했습니다.', error: err.message });
+      }
+
+      // 탄소량 통계 계산
+      const totalSavedEmission = trips.reduce((sum, trip) => sum + (trip.saved_emission || 0), 0);
+      const totalEmission = trips.reduce((sum, trip) => sum + (trip.total_emission || 0), 0);
+      const totalDistance = trips.reduce((sum, trip) => sum + (trip.distance || 0), 0);
+      const tripCount = trips.length;
+
+      res.status(200).json({
+        user,
+        trips,
+        statistics: {
+          totalSavedEmission,
+          totalEmission,
+          totalDistance,
+          tripCount,
+        },
+      });
+    });
+  });
+});
+
+// 유저 비밀번호 변경
+app.post('/admin/users/:userId/password', authMiddleware, adminMiddleware, (req, res) => {
+  const userId = parseInt(req.params.userId);
+  const { newPassword } = req.body;
+
+  if (!newPassword || newPassword.length < 4) {
+    return res.status(400).json({ message: '새 비밀번호는 최소 4자 이상이어야 합니다.' });
+  }
+
+  // 유저 존재 확인
+  const checkSql = 'SELECT id FROM users WHERE id = ?';
+  db.get(checkSql, [userId], (err, user) => {
+    if (err) {
+      return res.status(500).json({ message: '유저 확인 중 오류가 발생했습니다.', error: err.message });
+    }
+    if (!user) {
+      return res.status(404).json({ message: '유저를 찾을 수 없습니다.' });
+    }
+
+    // 비밀번호 암호화
+    bcrypt.hash(newPassword, 10, (err, hashedPassword) => {
+      if (err) {
+        return res.status(500).json({ message: '비밀번호 암호화 중 오류 발생', error: err.message });
+      }
+
+      const updateSql = 'UPDATE users SET password = ? WHERE id = ?';
+      db.run(updateSql, [hashedPassword, userId], function (err) {
+        if (err) {
+          return res.status(500).json({ message: '비밀번호 변경 중 오류가 발생했습니다.', error: err.message });
+        }
+        res.status(200).json({ message: '비밀번호가 성공적으로 변경되었습니다.' });
+      });
+    });
+  });
+});
+
+// 전체 탄소량 통계
+app.get('/admin/statistics', authMiddleware, adminMiddleware, (req, res) => {
+  // 모든 유저의 탄소량 통계
+  const sql = `
+    SELECT 
+      u.id,
+      u.username,
+      COALESCE(SUM(t.saved_emission), 0) as total_saved_emission,
+      COALESCE(SUM(t.total_emission), 0) as total_emission,
+      COALESCE(SUM(t.distance), 0) as total_distance,
+      COUNT(t.id) as trip_count
+    FROM users u
+    LEFT JOIN trips t ON u.id = t.user_id
+    GROUP BY u.id, u.username
+    ORDER BY total_saved_emission DESC
+  `;
+
+  db.all(sql, [], (err, userStats) => {
+    if (err) {
+      return res.status(500).json({ message: '통계 조회 중 오류가 발생했습니다.', error: err.message });
+    }
+
+    // 전체 합계 계산
+    const totalSavedEmission = userStats.reduce((sum, stat) => sum + stat.total_saved_emission, 0);
+    const totalEmission = userStats.reduce((sum, stat) => sum + stat.total_emission, 0);
+    const totalDistance = userStats.reduce((sum, stat) => sum + stat.total_distance, 0);
+    const totalTripCount = userStats.reduce((sum, stat) => sum + stat.trip_count, 0);
+    const totalUsers = userStats.length;
+
+    res.status(200).json({
+      summary: {
+        totalUsers,
+        totalSavedEmission,
+        totalEmission,
+        totalDistance,
+        totalTripCount,
+      },
+      users: userStats,
+    });
+  });
+});
+
+// 모든 네트워크 인터페이스에서 리스닝 (0.0.0.0)
+// 이렇게 하면 외부에서도 접근 가능 (같은 네트워크 내)
+app.listen(port, '0.0.0.0', () => {
+  console.log(`백엔드 서버가 http://0.0.0.0:${port} 에서 실행 중입니다.`);
+  console.log(`로컬 접근: http://localhost:${port}`);
+  console.log(`환경: ${isDevelopment ? '개발 모드' : '프로덕션 모드'}`);
+  if (isDevelopment) {
+    console.log('개발 서버 모드 - Android 에뮬레이터: http://10.0.2.2:3001');
+    console.log('개발 서버 모드 - 실제 기기: http://<your-local-ip>:3001');
+    console.log('⚠️  외부 접근 가능: 같은 네트워크의 다른 기기에서 접근할 수 있습니다.');
+  }
 });
