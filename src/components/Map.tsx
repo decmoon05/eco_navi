@@ -37,6 +37,11 @@ const segmentOptions: Record<TransportMode, { color: string; dashArray?: string;
   subway: { color: '#4CAF50', weight: 5 },
   car: { color: '#2196F3', weight: 5 },
   electric_car: { color: '#2196F3', weight: 5 },
+  hybrid: { color: '#2196F3', weight: 5 },
+  hydrogen: { color: '#4CAF50', weight: 5 },
+  motorcycle: { color: '#FF9800', weight: 4 },
+  electric_motorcycle: { color: '#4CAF50', weight: 4 },
+  vehicle: { color: '#2196F3', weight: 5 },
 };
 
 const Map: React.FC<MapProps> = ({ origin, destination, route, alternatives = [], isAcOn }) => {
