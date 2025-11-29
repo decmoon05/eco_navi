@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 배경 (진한 초록) -->
+    <path
+        android:fillColor="#305A3F"
+        android:pathData="M16,0H92c8.837,0 16,7.163 16,16v76c0,8.837 -7.163,16 -16,16H16C7.163,108 0,100.837 0,92V16C0,7.163 7.163,0 16,0z"/>
+
+    <!-- 전경 (연한 민트) -->
+    <g>
+        <path
+            android:fillColor="#AEDDB6"
+            android:pathData="M22,65 A40,40 0 0,1 65,22 L65,30 A32,32 0 0,0 30,65 Z M70,22 A40,40 0 0,1 95,40 L89,45 A32,32 0 0,0 70,30 Z M98,45 A40,40 0 0,1 102,70 L94,70 A32,32 0 0,0 91,50 Z"/>
+
+        <path
+            android:fillColor="#AEDDB6"
+            android:pathData="M45,85 C45,85 80,35 85,35 C85,35 70,80 45,85 Z"/>
+
+        <path
+            android:fillColor="#AEDDB6"
+            android:pathData="M30,85 C30,75 20,75 20,80 C20,80 25,90 30,85 Z M40,80 C40,70 30,70 30,75 C30,75 35,85 40,80 Z"/>
+    </g>
+</vector>
+
