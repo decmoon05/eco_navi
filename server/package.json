@@ -8,7 +8,8 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "sync": "node sync-database.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
