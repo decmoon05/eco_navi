@@ -3,8 +3,13 @@
   "version": "1.0.0",
   "description": "Backend server for EcoNaviAR application",
   "main": "index.js",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "sync": "node sync-database.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",

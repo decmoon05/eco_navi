@@ -9,7 +9,15 @@ const app = express();
 const port = process.env.PORT || 3001;
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
-app.use(cors());
+// CORS 설정: 프로덕션에서는 특정 origin만 허용 (필요 시)
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.ALLOWED_ORIGINS?.split(',') || '*' 
+    : '*',
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 // 요청 본문 크기 제한 증가 (기본 100kb → 10mb)
 // 경로 데이터(polylines 등)가 클 수 있으므로 제한을 늘림
 app.use(express.json({ limit: '10mb' }));
@@ -423,6 +431,7 @@ app.get('/reports/:year/:month', authMiddleware, async (req, res) => {
     const totalTrips = monthlyTrips.length;
     const totalDistance = monthlyTrips.reduce((sum, trip) => sum + trip.distance, 0);
     const averageDistance = totalDistance / totalTrips;
+    const totalSavedEmission = monthlyTrips.reduce((sum, trip) => sum + (trip.saved_emission || 0), 0);
 
     const modeCounts = monthlyTrips.reduce((acc, trip) => {
       acc[trip.transport_mode] = (acc[trip.transport_mode] || 0) + 1;
@@ -450,6 +459,7 @@ app.get('/reports/:year/:month', authMiddleware, async (req, res) => {
       totalTrips,
       totalDistance,
       averageDistance,
+      totalSavedEmission,
       modeCounts,
       bestDay,
       percentile,
@@ -589,6 +599,140 @@ app.get('/admin/statistics', authMiddleware, adminMiddleware, (req, res) => {
         totalTripCount,
       },
       users: userStats,
+    });
+  });
+});
+
+// 데이터베이스 백업 (모든 테이블 데이터를 JSON으로 내보내기)
+app.get('/admin/backup', authMiddleware, adminMiddleware, (req, res) => {
+  const tables = ['users', 'trips', 'user_achievements', 'products', 'user_products', 'user_quests'];
+  const backup = {};
+
+  // 각 테이블의 데이터를 순차적으로 가져오기
+  let completed = 0;
+  let hasError = false;
+
+  tables.forEach((table) => {
+    const sql = `SELECT * FROM ${table}`;
+    db.all(sql, [], (err, rows) => {
+      if (err) {
+        if (!hasError) {
+          hasError = true;
+          return res.status(500).json({ 
+            message: `데이터베이스 백업 중 오류가 발생했습니다.`, 
+            error: err.message 
+          });
+        }
+        return;
+      }
+
+      backup[table] = rows;
+      completed++;
+
+      // 모든 테이블 데이터를 가져왔으면 응답
+      if (completed === tables.length) {
+        res.status(200).json({
+          timestamp: new Date().toISOString(),
+          version: '1.0',
+          data: backup,
+        });
+      }
+    });
+  });
+});
+
+// 데이터베이스 복원 (JSON 데이터를 받아서 데이터베이스에 복원)
+app.post('/admin/restore', authMiddleware, adminMiddleware, (req, res) => {
+  const { data } = req.body;
+
+  if (!data || typeof data !== 'object') {
+    return res.status(400).json({ message: '백업 데이터가 올바르지 않습니다.' });
+  }
+
+  // 트랜잭션으로 모든 데이터 복원
+  db.serialize(() => {
+    db.run('BEGIN TRANSACTION');
+
+    const tables = ['users', 'trips', 'user_achievements', 'products', 'user_products', 'user_quests'];
+    let completed = 0;
+    let hasError = false;
+
+    tables.forEach((table) => {
+      if (!data[table] || !Array.isArray(data[table])) {
+        completed++;
+        if (completed === tables.length && !hasError) {
+          db.run('COMMIT', (err) => {
+            if (err) {
+              return res.status(500).json({ message: '복원 완료 중 오류가 발생했습니다.', error: err.message });
+            }
+            res.status(200).json({ message: '데이터베이스가 성공적으로 복원되었습니다.' });
+          });
+        }
+        return;
+      }
+
+      // 기존 데이터 삭제
+      db.run(`DELETE FROM ${table}`, (err) => {
+        if (err && !hasError) {
+          hasError = true;
+          db.run('ROLLBACK');
+          return res.status(500).json({ message: `테이블 ${table} 삭제 중 오류가 발생했습니다.`, error: err.message });
+        }
+
+        // 새 데이터 삽입
+        if (data[table].length === 0) {
+          completed++;
+          if (completed === tables.length && !hasError) {
+            db.run('COMMIT', (err) => {
+              if (err) {
+                return res.status(500).json({ message: '복원 완료 중 오류가 발생했습니다.', error: err.message });
+              }
+              res.status(200).json({ message: '데이터베이스가 성공적으로 복원되었습니다.' });
+            });
+          }
+          return;
+        }
+
+        // 각 행 삽입
+        let inserted = 0;
+        data[table].forEach((row, index) => {
+          const columns = Object.keys(row).filter(key => key !== 'id' || table === 'users'); // users 테이블은 id 포함
+          const placeholders = columns.map(() => '?').join(', ');
+          const values = columns.map(col => row[col]);
+          
+          let insertSql;
+          if (table === 'users' && row.id) {
+            // users 테이블은 id를 포함하여 삽입
+            insertSql = `INSERT OR REPLACE INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
+          } else {
+            insertSql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
+          }
+
+          db.run(insertSql, values, (err) => {
+            if (err && !hasError) {
+              hasError = true;
+              db.run('ROLLBACK');
+              return res.status(500).json({ 
+                message: `테이블 ${table} 데이터 삽입 중 오류가 발생했습니다.`, 
+                error: err.message 
+              });
+            }
+
+            inserted++;
+            if (inserted === data[table].length) {
+              completed++;
+              if (completed === tables.length && !hasError) {
+                db.run('COMMIT', (err) => {
+                  if (err) {
+                    return res.status(500).json({ message: '복원 완료 중 오류가 발생했습니다.', error: err.message });
+                  }
+                  res.status(200).json({ message: '데이터베이스가 성공적으로 복원되었습니다.' });
+                });
+              }
+            }
+          });
+        });
+      });
     });
   });
 });

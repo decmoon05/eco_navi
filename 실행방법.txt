@@ -1,76 +1,31 @@
-⚠️ 사전 준비 (최초 1회만 실행)
-
-1. 서버 환경 변수 설정
-   * server 폴더로 이동
-   * .env.example 파일을 .env로 복사
-   * .env 파일을 열어 JWT_SECRET 값을 설정 (랜덤 문자열)
-   
-   명령어:
-   cd C:\Users\WannaGoHome\Desktop\eco_navi\server
-   copy .env.example .env
-   (그 다음 .env 파일을 열어 JWT_SECRET 값을 변경하세요)
-
-2. API 키 설정
-   * EcoNaviAR/src/config 폴더로 이동
-   * apiKeys.ts.example 파일을 apiKeys.ts로 복사
-   * apiKeys.ts 파일에 실제 API 키 입력
-   
-   명령어:
-   cd C:\Users\WannaGoHome\Desktop\eco_navi\EcoNaviAR\src\config
-   copy apiKeys.ts.example apiKeys.ts
-   (그 다음 apiKeys.ts 파일을 열어 실제 API 키를 입력하세요)
-
-3. 의존성 설치
-   * 서버 의존성 설치:
-   cd C:\Users\WannaGoHome\Desktop\eco_navi\server
-   npm install
-   
-   * 앱 의존성 설치:
-   cd C:\Users\WannaGoHome\Desktop\eco_navi\EcoNaviAR
-   npm install
-   (또는 yarn install)
-
----
-
 세 개의 터미널(cmd 또는 PowerShell) 창을 각각 준비해 주세요.
 
----
+  ---
 
-1. 백엔드 서버 (API 서버) 실행
+  1. 백엔드 서버 (API 서버) 실행
 
    * 첫 번째 터미널 창에서 아래 명령어를 순서대로 실행합니다.
 
-   cd C:\Users\WannaGoHome\Desktop\eco_navi
-   node server/index.js
-   
-   (이 터미널은 백엔드 서버가 실행되는 동안 계속 켜두세요.)
-   (서버가 정상적으로 실행되면 "백엔드 서버가 http://0.0.0.0:3001 에서 실행 중입니다." 메시지가 표시됩니다.)
+   1     cd C:\Users\WannaGoHome\Desktop\eco_navi
+   2     node server/index.js
+      (이 터미널은 백엔드 서버가 실행되는 동안 계속 켜두세요.)
 
-2. 메트로 번들러 (React Native 개발 서버) 실행
+  2. 메트로 번들러 (React Native 개발 서버) 실행
 
    * 두 번째 터미널 창에서 아래 명령어를 순서대로 실행합니다.
 
-   cd C:\Users\WannaGoHome\Desktop\eco_navi\EcoNaviAR
-   npx react-native start --reset-cache
-   
-   (이 터미널은 메트로 번들러가 실행되는 동안 계속 켜두세요.)
-   (메트로 번들러가 시작되면 QR 코드와 함께 메시지가 표시됩니다.)
+   1     cd C:\Users\WannaGoHome\Desktop\eco_navi\EcoNaviAR
+   2     npx react-native start --reset-cache
+      (이 터미널은 메트로 번들러가 실행되는 동안 계속 켜두세요.)
 
-3. 안드로이드 앱 실행
+  3. 안드로이드 앱 실행
 
    * 세 번째 터미널 창에서 아래 명령어를 순서대로 실행합니다.
 
-   cd C:\Users\WannaGoHome\Desktop\eco_navi\EcoNaviAR
-   npx react-native run-android
-   
-   (이 명령은 앱을 빌드하고 에뮬레이터에 설치하여 실행합니다.)
-   (안드로이드 에뮬레이터가 실행 중이어야 합니다.)
+   1     cd C:\Users\WannaGoHome\Desktop\eco_navi\EcoNaviAR
+   2     npx react-native run-android
+      (이 명령은 앱을 빌드하고 에뮬레이터에 설치하여 실행합니다.)
 
----
+  ---
 
-⚠️ 주의사항:
-- 안드로이드 에뮬레이터가 실행 중이어야 앱이 설치됩니다.
-- 에뮬레이터가 없으면 Android Studio에서 AVD Manager로 에뮬레이터를 먼저 생성하세요.
-- 실제 휴대폰을 사용하려면 개발자 옵션에서 USB 디버깅을 활성화하고 연결하세요.
-
-이 세 가지를 모두 실행하면 앱이 에뮬레이터에 나타날 것입니다.
+  이 세 가지를 모두 실행하면 앱이 에뮬레이터에 나타날 것입니다.

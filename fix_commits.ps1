@@ -74,3 +74,5 @@ Write-Host "`nGit Bash를 통해 filter-branch를 실행합니다..." -Foregroun
 Write-Host "또는 수동으로 다음 명령어를 실행하세요:" -ForegroundColor Yellow
 Write-Host "git filter-branch -f --msg-filter 'bash filter_script.sh' HEAD~5..HEAD" -ForegroundColor Cyan
 
+
+

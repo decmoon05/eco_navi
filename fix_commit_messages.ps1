@@ -35,3 +35,5 @@ if ($push -eq "y") {
     Write-Host "푸시를 취소했습니다. 나중에 'git push --force origin main'으로 푸시하세요." -ForegroundColor Yellow
 }
 
+
+
